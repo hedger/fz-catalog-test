@@ -1,0 +1,40 @@
+name: 'Build application package'
+
+on:
+  push:
+    branches:
+      - dev
+      - main
+    tags:
+      - '*'
+  pull_request:
+
+jobs:
+  build_package:
+    # runs-on: [self-hosted, FlipperZeroShell]
+    runs-on: ubuntu-latest
+    steps:
+      - name: 'Decontaminate previous build leftovers'
+        run: |
+          if [ -d .git ]; then
+            git submodule status || git checkout "$(git rev-list --max-parents=0 HEAD | tail -n 1)"
+          fi
+
+      - name: 'Checkout code'
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 2
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Get updated manifests
+        id: changed-files
+        uses: tj-actions/changed-files@v35
+        with:
+          files: |
+            **/*.yml
+
+      - name: List updated manifests
+        run: |
+          for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
+            echo "$file was changed"
+          done
